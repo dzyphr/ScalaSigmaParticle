@@ -1,0 +1,22 @@
+{
+  "node": {
+    "nodeApi": {
+      "apiUrl": "http://127.0.0.1:9052/",
+      "apiKey": ""
+    },
+    "wallet": {
+      "mnemonic": "",
+      "mnemonicPassword": ""
+    },
+    "networkType": "TESTNET"
+  },
+  "parameters": {
+    "addrIndex": 0,
+    "lockTime": 5,
+    "pin": "1234",
+    "senderAddr": "",
+    "freezeAddress": "",
+    "pinLockAddress": "",
+    "pinLockBoxId": ""
+  }
+}
