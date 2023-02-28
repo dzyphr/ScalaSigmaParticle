@@ -10,7 +10,7 @@ object UnfreezeCoin {
     val sender: Address = Address.create(config.getParameters.get("senderAddr"))
     val addrIndex: Int = config.getParameters.get("addrIndex").toInt
     val frozenCoins = Address.create(config.getParameters.get("freezeAddress"))
-    println(sender.asP2PK())
+
 
     val ergoClient: ErgoClient = RestApiErgoClient.create(nodeConfig, explorerUrl)
 
@@ -24,7 +24,7 @@ object UnfreezeCoin {
       val prover: ErgoProver = ctx.newProverBuilder().withMnemonic(ssM, ssP, false)
         .withEip3Secret(addrIndex)
         .build()
-      println(prover.getEip3Addresses.get(0))
+
 
       val senderEIP3: Address = prover.getEip3Addresses().get(0)
 

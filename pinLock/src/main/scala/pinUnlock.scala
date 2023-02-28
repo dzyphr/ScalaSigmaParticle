@@ -1,10 +1,9 @@
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
+import org.ergoplatform.appkit.impl.ErgoTreeContract
 
-
-
-object FreezeCoinObject {
-  private def freezeCoin(configFileName: String): String = {
+object pinUnlock {
+  private def pinUnlock(configFileName: String):String = {
     val config: ErgoToolConfig = ErgoToolConfig.load(configFileName)
     val nodeConfig: ErgoNodeConfig = config.getNode
     val explorerUrl: String = "https://tn-ergo-explorer.anetabtc.io/"
@@ -15,60 +14,38 @@ object FreezeCoinObject {
 
 
     val ergoClient: ErgoClient = RestApiErgoClient.create(nodeConfig, explorerUrl)
-
     val txJson: String = ergoClient.execute((ctx: BlockchainContext) => {
       val walletMnemonic: String = nodeConfig.getWallet().getMnemonic().toString
       val mnemonicPassword: String = nodeConfig.getWallet().getMnemonicPassword().toString
       val ssM: SecretString = SecretString.create(walletMnemonic)
       val ssP: SecretString = SecretString.create(mnemonicPassword)
-
-
-
+      val pinLockedCoins = Address.create(config.getParameters.get("pinLockAddress").toString)
+      val pinLockBoxId: String = config.getParameters.get("pinLockBoxId").toString
       val prover: ErgoProver = ctx.newProverBuilder().withMnemonic(ssM, ssP, false)
         .withEip3Secret(addrIndex)
         .build()
-
-
-      val senderEIP3: Address = prover.getEip3Addresses().get(0)
-      println(senderEIP3.toString)
-      val ergoAmount: Long = Parameters.OneErg * 2
-      val ergoAmountFeeIncluded: Long = ergoAmount + Parameters.MinFee
-
-      val freezeCoinScript: String =
-        s"""
-                { sigmaProp(HEIGHT > freezeDeadline) && sender }
-         """.stripMargin
-
-      val contract: ErgoContract = ctx.compileContract(
-        ConstantsBuilder.create()
-          .item("freezeDeadline", ctx.getHeight + lockTime)
-          .item("sender", sender.getPublicKey)
-          .build(),
-        freezeCoinScript)
-
-      //TODO CUSTOM INPUT BOX LOADER
-      val inputboxes = BoxOperations.createForSender(sender, ctx)
-        .withAmountToSpend(ergoAmountFeeIncluded)
-        .loadTop()
-
-      val freezeBox = ctx.newTxBuilder()
-          .boxesToSpend(inputboxes)
-          .outBoxBuilder()
-          .value(ergoAmountFeeIncluded)
-          .contract(contract).build()
-
-      val unsignedTransaction = ctx.newTxBuilder()
+      val senderEIP3: Address = prover.getEip3Addresses().get(addrIndex)
+      val ergoAmountFeeSubtracted: Long = Parameters.OneErg * 2 - Parameters.MinFee
+      val pin = config.getParameters.get("pin").toString
+      val unlockBox = ctx.newTxBuilder().outBoxBuilder()
+        .value(ergoAmountFeeSubtracted)
+        .contract(new ErgoTreeContract(sender.getErgoAddress.script, NetworkType.TESTNET))
+        .registers(ErgoValue.of(pin.getBytes()))
+        .build()
+      val inputboxes = java.util.Arrays.asList(ctx.getBoxesById(pinLockBoxId).array.last)
+      val tx = ctx.newTxBuilder()
         .boxesToSpend(inputboxes)
+        .outputs(unlockBox)
         .fee(Parameters.MinFee)
-        .outputs(freezeBox)
-        .sendChangeTo(senderEIP3.getErgoAddress)
+        .sendChangeTo(prover.getP2PKAddress)
         .build()
 
-      val signedContractTx: SignedTransaction = prover.sign(unsignedTransaction)
+      val signed = prover.sign(tx)
 
-      /*val txId =*/ctx.sendTransaction(signedContractTx)
+      ctx.sendTransaction(signed)
 
-      signedContractTx.toJson(true)
+      signed.toJson(true)
+
     })
     txJson
   }
@@ -82,7 +59,7 @@ object FreezeCoinObject {
       print("enter the config file name as the only argument")
       sys.exit
     }
-    val txJson: String = freezeCoin(args(0))
+    val txJson: String = pinUnlock(args(0))
     println(txJson)
   }
 }
