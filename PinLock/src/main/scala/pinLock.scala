@@ -42,7 +42,7 @@ object pinLock {
       val inputboxes = BoxOperations.createForSender(sender, ctx)
         .withAmountToSpend(ergoAmountFeeIncluded)
         .loadTop()
-      println(pin)
+
       val pinLockBox = ctx.newTxBuilder()
         .boxesToSpend(inputboxes)
         .outBoxBuilder()
