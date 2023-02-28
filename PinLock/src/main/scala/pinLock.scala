@@ -11,7 +11,7 @@ object pinLock {
     val lockTime: Int = config.getParameters.get("lockTime").toInt
     val sender: Address = Address.create(config.getParameters.get("senderAddr"))
     val addrIndex: Int = config.getParameters.get("addrIndex").toInt
-    println(sender.asP2PK())
+    
 
     val ergoClient: ErgoClient = RestApiErgoClient.create(nodeConfig, explorerUrl)
 
