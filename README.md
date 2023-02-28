@@ -6,7 +6,7 @@
 
 #### In the future will aim to reduce boilerplate setup through modular functions
 
-#### Also planning to connect to python version for cross-lang compatibility
+#### Also planning to connect to python version for cross-lang compatibility and usage with an atomic swap pipeline
 
 View EXAMPLECONFIG for setting up personal variables, when running examples make sure to give the name of the config you make as the arg
 

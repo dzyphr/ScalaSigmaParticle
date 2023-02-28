@@ -19,7 +19,6 @@ object pinUnlock {
       val mnemonicPassword: String = nodeConfig.getWallet().getMnemonicPassword().toString
       val ssM: SecretString = SecretString.create(walletMnemonic)
       val ssP: SecretString = SecretString.create(mnemonicPassword)
-      val pinLockedCoins = Address.create(config.getParameters.get("pinLockAddress").toString)
       val pinLockBoxId: String = config.getParameters.get("pinLockBoxId").toString
       val prover: ErgoProver = ctx.newProverBuilder().withMnemonic(ssM, ssP, false)
         .withEip3Secret(addrIndex)

@@ -22,7 +22,8 @@ object pinLock {
       val ssP: SecretString = SecretString.create(mnemonicPassword)
 
 
-      val prover: ErgoProver = ctx.newProverBuilder().withMnemonic(ssM, ssP, false)
+      val prover: ErgoProver = ctx.newProverBuilder()
+        .withMnemonic(ssM, ssP, false)
         .withEip3Secret(addrIndex)
         .build()
       val senderEIP3: Address = prover.getEip3Addresses().get(addrIndex)
