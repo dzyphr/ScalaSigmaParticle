@@ -26,7 +26,6 @@ object pinLock {
         .withMnemonic(ssM, ssP, false)
         .withEip3Secret(addrIndex)
         .build()
-      val senderEIP3: Address = prover.getEip3Addresses().get(addrIndex)
       val ergoAmount: Long = Parameters.OneErg * 2
       val ergoAmountFeeIncluded: Long = ergoAmount + Parameters.MinFee
       val pinLockScript: String =
@@ -55,7 +54,7 @@ object pinLock {
         .boxesToSpend(inputboxes)
         .fee(Parameters.MinFee)
         .outputs(pinLockBox)
-        .sendChangeTo(senderEIP3.getErgoAddress)
+        .sendChangeTo(sender.getErgoAddress)
         .build()
 
       val signedContractTx: SignedTransaction = prover.sign(unsignedTransaction)
