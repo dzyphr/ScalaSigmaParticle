@@ -180,7 +180,7 @@ object AtomicMultiSig {
           ErgoValue.of(dlogGroup.generator),
           ErgoValue.of(dlogGroup.generator))
         .build()
-      val inputboxes = java.util.Arrays.asList(ctx.getBoxesById(timedFundBoxID).array.last)
+      val inputboxes = java.util.Arrays.asList(ctx.getBoxesById(atomicBox).array.last)
       val tx = ctx.newTxBuilder()
         .boxesToSpend(inputboxes)
         .outputs(unlockBox)
