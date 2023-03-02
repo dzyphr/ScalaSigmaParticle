@@ -1,11 +1,10 @@
-
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
 import org.ergoplatform.appkit.impl.ErgoTreeContract
 import sigmastate.eval.CostingSigmaDslBuilder.GroupElement
 import sigmastate.interpreter.CryptoConstants._
-
 import java.math.BigInteger
+
 object AtomicMultiSig {
   private def atomicDeposit(ConfigFileName: String): String = {
     val config: ErgoToolConfig = ErgoToolConfig.load(ConfigFileName)
@@ -40,7 +39,7 @@ object AtomicMultiSig {
       val ksG = GroupElement(dlogGroup.curve.createPoint(ksGX, ksGY))
       val receiver = Address.create(config.getParameters.get("p2Addr")).getPublicKey
       val lockHeight = ctx.getHeight + 10
-      val scalarLockScript: String = {
+      val atomicLockScript: String = {
       s"""
             {
               val srBYTES = OUTPUTS(0).R4[Coll[Byte]].get
@@ -72,7 +71,7 @@ object AtomicMultiSig {
         .item("generator", generator)
         .item("lockHeight", lockHeight)
         .build(),
-      scalarLockScript)
+      atomicLockScript)
       val inputboxes = BoxOperations.createForSender(sender, ctx)
         .withAmountToSpend(ergoAmountFeeIncluded)
         .loadTop()
