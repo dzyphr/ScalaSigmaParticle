@@ -175,6 +175,11 @@ object AtomicMultiSig {
       val unlockBox = ctx.newTxBuilder().outBoxBuilder()
         .value(ergoAmountFeeSubtracted - Parameters.MinFee)
         .contract(new ErgoTreeContract(sender.getErgoAddress.script, NetworkType.TESTNET))
+        .registers(
+          ErgoValue.of(BigInteger.ZERO.toByteArray),
+          ErgoValue.of(BigInteger.ZERO.toByteArray),
+          ErgoValue.of(dlogGroup.generator),
+          ErgoValue.of(dlogGroup.generator))
         .build()
       val inputboxes = java.util.Arrays.asList(ctx.getBoxesById(timedFundBoxID).array.last)
       val tx = ctx.newTxBuilder()
