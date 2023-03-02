@@ -164,7 +164,7 @@ object AtomicMultiSig {
       val mnemonicPassword: String = nodeConfig.getWallet().getMnemonicPassword().toString
       val ssM: SecretString = SecretString.create(walletMnemonic)
       val ssP: SecretString = SecretString.create(mnemonicPassword)
-      val timedFundBoxID: String = config.getParameters.get("atomicBox").toString
+      val atomicBox: String = config.getParameters.get("atomicBox").toString
 
       val prover: ErgoProver = ctx.newProverBuilder()
         .withMnemonic(ssM, ssP, false)
