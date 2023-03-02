@@ -1,11 +1,17 @@
+import org.bouncycastle.math.ec.ECPoint
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
+import org.ergoplatform.ErgoBox.R4
+import org.bouncycastle.util.encoders.Hex
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
 import org.ergoplatform.appkit.impl.ErgoTreeContract
-import sigmastate.interpreter.CryptoConstants._
-import java.math.BigInteger
 
-object ScalarLock {
-  private def scalarLock(ConfigFileName: String): String = {
+import java.math.BigInteger
+//import sigmastate.basics.SecP256K1.curve
+import sigmastate.eval.CostingSigmaDslBuilder.GroupElement
+import sigmastate.interpreter.CryptoConstants._
+object GroupElementLock {
+  private def groupElementLock(ConfigFileName: String): String = {
     val config: ErgoToolConfig = ErgoToolConfig.load(ConfigFileName)
     val nodeConfig: ErgoNodeConfig = config.getNode
     val explorerUrl: String = "https://tn-ergo-explorer.anetabtc.io/"
@@ -23,18 +29,16 @@ object ScalarLock {
         .build()
       val ergoAmount: Long = Parameters.OneErg * 2
       val ergoAmountFeeIncluded: Long = ergoAmount + Parameters.MinFee
-      val generator = dlogGroup.generator.getEncoded(true)
-      val x = new BigInteger(config.getParameters.get("x"))
-      val xG = dlogGroup.generator.multiply(x)
-      val scalarLockScript: String = {
+      val X = new BigInteger(config.getParameters.get("geX"))
+      val Y = new BigInteger(config.getParameters.get("geY"))
+      val GE = GroupElement(dlogGroup.curve.createPoint(X, Y))
+      val groupElementLockScript: String = {
         s"""
             {
-            val xBYTES = OUTPUTS(0).R4[Coll[Byte]].get
-            val x = byteArrayToBigInt(xBYTES)
-            val G = decodePoint(generator)
+            val receiverGE = OUTPUTS(0).R4[GroupElement].get
               sigmaProp(
                 receiver &&
-                G.exp(x) == xG
+                receiverGE == contractGE
               )
             }
         """.stripMargin
@@ -42,14 +46,13 @@ object ScalarLock {
       val contract: ErgoContract = ctx.compileContract(
         ConstantsBuilder.create()
           .item("receiver", sender.getPublicKey) //receiver is sender just for this example
-          .item("xG", xG)
-          .item("generator", generator)
+          .item("contractGE", GE)
           .build(),
-        scalarLockScript)
+        groupElementLockScript)
       val inputboxes = BoxOperations.createForSender(sender, ctx)
         .withAmountToSpend(ergoAmountFeeIncluded)
         .loadTop()
-      val scalarLockBox= ctx.newTxBuilder()
+      val groupElementLockBox = ctx.newTxBuilder()
         .boxesToSpend(inputboxes)
         .outBoxBuilder()
         .value(ergoAmountFeeIncluded)
@@ -58,7 +61,7 @@ object ScalarLock {
       val unsignedTransaction = ctx.newTxBuilder()
         .boxesToSpend(inputboxes)
         .fee(Parameters.MinFee)
-        .outputs(scalarLockBox)
+        .outputs(groupElementLockBox)
         .sendChangeTo(sender.getErgoAddress)
         .build()
 
@@ -69,7 +72,7 @@ object ScalarLock {
     txJson
   }
 
-  private def scalarUnlock(ConfigFileName: String): String = {
+  private def groupElementUnlock(ConfigFileName: String): String = {
     val config: ErgoToolConfig = ErgoToolConfig.load(ConfigFileName)
     val nodeConfig: ErgoNodeConfig = config.getNode
     val explorerUrl: String = "https://tn-ergo-explorer.anetabtc.io/"
@@ -81,25 +84,27 @@ object ScalarLock {
       val mnemonicPassword: String = nodeConfig.getWallet().getMnemonicPassword().toString
       val ssM: SecretString = SecretString.create(walletMnemonic)
       val ssP: SecretString = SecretString.create(mnemonicPassword)
-      val scalarLockBox: String = config.getParameters.get("scalarLockBox").toString
+      val geBox: String = config.getParameters.get("geBox").toString
       val prover: ErgoProver = ctx.newProverBuilder()
         .withMnemonic(ssM, ssP, false)
         .withEip3Secret(addrIndex)
         .build()
       val ergoAmount: Long = Parameters.OneErg * 2
       val ergoAmountFeeSubtracted: Long = ergoAmount - Parameters.MinFee
+      val X = new BigInteger(config.getParameters.get("geX"))
+      val Y = new BigInteger(config.getParameters.get("geY"))
+      val GE = GroupElement(dlogGroup.curve.createPoint(X, Y))
 
-      val x = new BigInteger(config.getParameters.get("x"))
-      val xBYTES = BigInt.javaBigInteger2bigInt(x ).toByteArray
+
 
       //val xBYTES = x.toByteArray()
-      val exBYTES = ErgoValue.of(xBYTES)
+      val eGE = ErgoValue.of(GE)
       val unlockBox = ctx.newTxBuilder().outBoxBuilder()
-        .value(ergoAmountFeeSubtracted )
+        .value(ergoAmountFeeSubtracted)
         .contract(new ErgoTreeContract(sender.getErgoAddress.script, NetworkType.TESTNET))
-        .registers(exBYTES)
+        .registers(eGE)
         .build()
-      val inputboxes = java.util.Arrays.asList(ctx.getBoxesById(scalarLockBox).array.last)
+      val inputboxes = java.util.Arrays.asList(ctx.getBoxesById(geBox).array.last)
       val tx = ctx.newTxBuilder()
         .boxesToSpend(inputboxes)
         .outputs(unlockBox)
@@ -115,15 +120,15 @@ object ScalarLock {
   }
   def main(args: Array[String]): Unit = {
     if (args.length > 1) {
-      println("too many args, enter one arg for config file name")
+      print("too many args, enter one arg for config file name")
       sys.exit
     }
     else if (args.length == 0) {
       print("enter the config file name as the only argument")
       sys.exit
     }
-    //val txJson: String = scalarLock(args(0))
-    val txJson: String = scalarUnlock(args(0))
-    println(txJson)
+    val txJson = groupElementLock(args(0))
+    //val txJson = groupElementUnlock(args(0))
+    print(txJson)
   }
 }
