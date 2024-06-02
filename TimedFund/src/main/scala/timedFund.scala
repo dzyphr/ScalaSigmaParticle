@@ -160,9 +160,9 @@ object timedFund {
       sys.exit
     }
     //currently you can switch between noted function calls to switch between parties
-    //val txJson: String = timedFundDeposit(args(0))
+    val txJson: String = timedFundDeposit(args(0))
     //val txJson: String = timedFundP2Withdraw(args(0))
-    val txJson: String = timedFundP1ReClaim(args(0))
+    //val txJson: String = timedFundP1ReClaim(args(0))
     println(txJson)
   }
 }
